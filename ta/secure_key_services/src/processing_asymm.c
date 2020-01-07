@@ -467,6 +467,7 @@ uint32_t step_asymm_operation(struct pkcs11_session *session,
 			goto bail;
 		}
 		TEE_GetOperationInfo(proc->tee_op_handle, &opinfo);
+		uint32_t key_size = (opinfo.keySize + 7) / 8;
 		switch (opinfo.algorithm) {
 		case TEE_ALG_ECDSA_P192:
 			if (in_size > 24)
@@ -494,7 +495,7 @@ uint32_t step_asymm_operation(struct pkcs11_session *session,
 		}
 		/* Validate second input buffer size if verify */
 		if (function == SKS_FUNCTION_VERIFY &&
-				in2_size != 2 * in_size) {
+				in2_size != 2 * key_size) {
 			rv = SKS_CKR_SIGNATURE_LEN_RANGE;
 			goto bail;
 		}
