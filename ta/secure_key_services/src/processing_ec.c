@@ -1146,6 +1146,8 @@ static uint32_t tee2sks_ec_attributes(struct sks_attrs_head **pub_head,
 	size_t psize = 0;
 	size_t qsize = 0;
 	size_t dersize = 0;
+	size_t derindex = 0;
+	size_t size_byte_len = 0;
 	size_t poffset = 0;
 	uint32_t rv = 0;
 
@@ -1171,13 +1173,16 @@ static uint32_t tee2sks_ec_attributes(struct sks_attrs_head **pub_head,
 	}
 
 	qsize = 1 + 2 * psize;
-	/* TODO: Support DER long definitive form, needed for 64 key size */
-	if (qsize < 0x80) {
-		dersize = qsize + 2;
-	} else {
-		EMSG("DER long definitive form not yet supported");
-		rv = SKS_CKR_MECHANISM_INVALID;
-		goto p_cleanup;
+	dersize = qsize + 2;
+	if (qsize >= 0x80) {
+		/* DER long definitive form, needed for 64 key size */
+		int bb = qsize;
+		do {
+			bb >>= 8;
+			++size_byte_len;
+		} while (bb);
+		dersize += size_byte_len;
+		DMSG("DER long size_byte_len=%u, dersize=%u", size_byte_len, dersize);
 	}
 
 	ecpoint = TEE_Malloc(dersize, TEE_MALLOC_FILL_ZERO);
@@ -1187,20 +1192,33 @@ static uint32_t tee2sks_ec_attributes(struct sks_attrs_head **pub_head,
 	}
 
 	/* DER encoding */
-	ecpoint[0] = 0x04;
-	ecpoint[1] = qsize & 0x7f;
+	ecpoint[derindex++] = 0x04;
+	if (qsize < 0x80) {
+		DMSG("Using DER short definitive form qsize=%u", qsize);
+		ecpoint[derindex++] = qsize & 0x7f;
+	} else {
+		DMSG("Using DER long definitive form limit qsize=%u", qsize);
+		ecpoint[derindex++] = 0x80 | size_byte_len;
+		int bb = qsize;
+		for (int i = size_byte_len-1; i >= 0; --i) {
+			ecpoint[derindex+i] = qsize & 0xff;
+			bb >>= 8;
+		}
+		derindex += size_byte_len;
+	}
+
 	/* Only UNCOMPRESSED ECPOINT is currently supported */
-	ecpoint[2] = 0x04;
+	ecpoint[derindex++] = 0x04;
 
 	poffset = 0;
 	if (x_size < psize)
 		poffset = psize - x_size;
-	TEE_MemMove(ecpoint + 3 + poffset, x_ptr, x_size);
+	TEE_MemMove(ecpoint + derindex + poffset, x_ptr, x_size);
 
 	poffset = 0;
 	if (y_size < psize)
 		poffset = psize - y_size;
-	TEE_MemMove(ecpoint + 3 + psize + poffset, y_ptr, y_size);
+	TEE_MemMove(ecpoint + derindex + psize + poffset, y_ptr, y_size);
 
 	/*
 	 * Add EC_POINT on both private and public key objects as

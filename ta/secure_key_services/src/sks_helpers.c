@@ -649,6 +649,7 @@ bool sks2tee_load_attr(TEE_Attribute *tee_ref, uint32_t tee_id,
 	void *a_ptr = NULL;
 	void *buf = NULL;
 	size_t a_size = 0;
+	size_t derindex = 0;
 	uint32_t data32 = 0;
 
 	switch (tee_id) {
@@ -681,16 +682,22 @@ bool sks2tee_load_attr(TEE_Attribute *tee_ref, uint32_t tee_id,
 			return false;
 		}
 
-		/* TODO: Support DER long definitive form */
+		derindex = 2;
 		if (a_size >= 0x80) {
-			EMSG("DER long definitive form not yet supported");
-			return false;
+			/* DER definite long form */
+			int bb = a_size;
+			do {
+				bb >>= 8;
+				++derindex;
+			} while (bb);
 		}
-		if (((char *)a_ptr)[2] != 0x04) {
+
+		if (((char *)a_ptr)[derindex++] != 0x04) {
 			EMSG("Unsupported EC_POINT form");
 			return false;
 		}
-		if (a_size != 2 + 2 * data32 + 1) {
+
+		if (a_size != derindex + 2 * data32) {
 			EMSG("Invalid EC_POINT attribute");
 			return false;
 		}
@@ -699,9 +706,9 @@ bool sks2tee_load_attr(TEE_Attribute *tee_ref, uint32_t tee_id,
 		if (!buf)
 			return false;
 		if (tee_id == TEE_ATTR_ECC_PUBLIC_VALUE_X)
-			TEE_MemMove(buf, (uint8_t *)a_ptr + 3, data32);
+			TEE_MemMove(buf, (uint8_t *)a_ptr + derindex, data32);
 		else
-			TEE_MemMove(buf, (uint8_t *)a_ptr + 3 + data32, data32);
+			TEE_MemMove(buf, (uint8_t *)a_ptr + derindex + data32, data32);
 		TEE_InitRefAttribute(tee_ref, tee_id, buf, data32);
 
 		return true;
