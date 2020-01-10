@@ -1041,19 +1041,11 @@ uint32_t sks2tee_algo_ecdh(uint32_t *tee_id,
 
 	switch (get_object_key_bit_size(obj)) {
 	case 192:
-		*tee_id = TEE_ALG_ECDH_P192;
-		break;
 	case 224:
-		*tee_id = TEE_ALG_ECDH_P224;
-		break;
 	case 256:
-		*tee_id = TEE_ALG_ECDH_P256;
-		break;
 	case 384:
-		*tee_id = TEE_ALG_ECDH_P384;
-		break;
 	case 521:
-		*tee_id = TEE_ALG_ECDH_P521;
+		*tee_id = TEE_ALG_ECDH_DERIVE_SHARED_SECRET;
 		break;
 	default:
 		TEE_Panic(0);
@@ -1112,19 +1104,19 @@ uint32_t sks2tee_algo_ecdsa(uint32_t *tee_id,
 
 	switch (get_object_key_bit_size(obj)) {
 	case 192:
-		*tee_id = TEE_ALG_ECDSA_P192;
+		*tee_id = TEE_ALG_ECDSA_SHA1;
 		break;
 	case 224:
-		*tee_id = TEE_ALG_ECDSA_P224;
+		*tee_id = TEE_ALG_ECDSA_SHA224;
 		break;
 	case 256:
-		*tee_id = TEE_ALG_ECDSA_P256;
+		*tee_id = TEE_ALG_ECDSA_SHA256;
 		break;
 	case 384:
-		*tee_id = TEE_ALG_ECDSA_P384;
+		*tee_id = TEE_ALG_ECDSA_SHA384;
 		break;
 	case 521:
-		*tee_id = TEE_ALG_ECDSA_P521;
+		*tee_id = TEE_ALG_ECDSA_SHA512;
 		break;
 	default:
 		TEE_Panic(0);

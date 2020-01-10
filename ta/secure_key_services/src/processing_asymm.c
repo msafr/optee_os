@@ -469,23 +469,23 @@ uint32_t step_asymm_operation(struct pkcs11_session *session,
 		TEE_GetOperationInfo(proc->tee_op_handle, &opinfo);
 		uint32_t key_size = (opinfo.keySize + 7) / 8;
 		switch (opinfo.algorithm) {
-		case TEE_ALG_ECDSA_P192:
+		case TEE_ALG_ECDSA_SHA1:
 			if (in_size > 24)
 				in_size = 24;
 			break;
-		case TEE_ALG_ECDSA_P224:
+		case TEE_ALG_ECDSA_SHA224:
 			if (in_size > 28)
 				in_size = 28;
 			break;
-		case TEE_ALG_ECDSA_P256:
+		case TEE_ALG_ECDSA_SHA256:
 			if (in_size > 32)
 				in_size = 32;
 			break;
-		case TEE_ALG_ECDSA_P384:
+		case TEE_ALG_ECDSA_SHA384:
 			if (in_size > 48)
 				in_size = 48;
 			break;
-		case TEE_ALG_ECDSA_P521:
+		case TEE_ALG_ECDSA_SHA512:
 			if (in_size > 64)
 				in_size = 64;
 			break;
